@@ -69,33 +69,26 @@ const Navbar = ({
   menu = [
     { title: "Home", url: "#" },
     {
-      title: "Products",
+      title: "Dashboards",
       url: "#",
       items: [
         {
-          title: "Blog",
+          title: "User Dashboard",
           description: "The latest industry news, updates, and info",
           icon: <Book className="size-5 shrink-0" />,
-          url: "#",
+          url: "/user/dashboard",
         },
         {
-          title: "Company",
-          description: "Our mission is to innovate and empower the world",
+          title: "Tutor Dashboard",
+          description: "Manage your courses and students",
           icon: <Trees className="size-5 shrink-0" />,
-          url: "#",
+          url: "/tutor/dashboard",
         },
         {
-          title: "Careers",
+          title: "Admin Dashboard",
           description: "Browse job listing and discover our workspace",
           icon: <Sunset className="size-5 shrink-0" />,
-          url: "#",
-        },
-        {
-          title: "Support",
-          description:
-            "Get in touch with our support team or visit our community forums",
-          icon: <Zap className="size-5 shrink-0" />,
-          url: "#",
+          url: "/admin/dashboard",
         },
       ],
     },
