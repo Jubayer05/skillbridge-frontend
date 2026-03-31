@@ -11,11 +11,23 @@ import {
 import { useAuth } from "@/context/auth-context";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useSyncExternalStore } from "react";
 
 const sidebarStyles = {
   "--sidebar-width": "calc(var(--spacing) * 72)",
   "--header-height": "calc(var(--spacing) * 12)",
 } as React.CSSProperties;
+
+// Returns false on the server / during hydration, true after mount.
+// Prevents the sidebar from flashing between the SSR placeholder and the
+// role-specific menu on the first client render.
+function useHasMounted() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -30,14 +42,20 @@ export default function DashboardLayout({
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
-  const role = user?.role;
+  const hasMounted = useHasMounted();
+
+  // Before mount every render returns null for the user so server HTML and
+  // the initial client hydration tree are identical (no error #418).
+  const activeUser = hasMounted ? user : null;
+
+  const role = activeUser?.role;
   const isAdmin = role === "ADMIN";
   const isTutor = role === "TUTOR";
   const sidebarMenu = isAdmin
-    ? getAdminSidebarMenu(user)
+    ? getAdminSidebarMenu(activeUser)
     : isTutor
-      ? getTutorSidebarMenu(user)
-      : getStudentSidebarMenu(user);
+      ? getTutorSidebarMenu(activeUser)
+      : getStudentSidebarMenu(activeUser);
 
   // At /dashboard use the role-specific parallel slot content.
   // For every other route (sub-pages) render the actual page via children.

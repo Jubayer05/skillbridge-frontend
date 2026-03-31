@@ -1,7 +1,13 @@
 "use client";
 
 import type { AuthUser } from "@/types/auth";
-import { createContext, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -13,7 +19,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const COOKIE_NAME = "skillbridge-user";
 
-// Read user from cookie
 function readUserCookie(): AuthUser | null {
   if (typeof document === "undefined") return null;
   const match = document.cookie
@@ -27,30 +32,72 @@ function readUserCookie(): AuthUser | null {
   }
 }
 
-// Write user to cookie
 function writeUserCookie(user: AuthUser) {
   const value = encodeURIComponent(JSON.stringify(user));
-  // 7 days, SameSite=Lax, NOT httpOnly so middleware + JS can read it
   document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
 }
 
-// Delete user from cookie
 function deleteUserCookie() {
   document.cookie = `${COOKIE_NAME}=; path=/; max-age=0`;
 }
 
+// ---------------------------------------------------------------------------
+// External store — module-level so mutations (setAuth / clearAuth) are
+// visible to all useSyncExternalStore subscribers on the same page.
+// ---------------------------------------------------------------------------
+const listeners = new Set<() => void>();
+let _user: AuthUser | null = null;
+
+function notifyListeners() {
+  listeners.forEach((fn) => fn());
+}
+
+function subscribe(callback: () => void) {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
+// During SSR (getServerSnapshot) always return null so the server-rendered
+// HTML matches the initial client render — preventing hydration error #418.
+function getServerSnapshot(): null {
+  return null;
+}
+
+// During client rendering return the in-memory value.
+function getClientSnapshot(): AuthUser | null {
+  return _user;
+}
+
+// ---------------------------------------------------------------------------
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => readUserCookie());
+  // Initialise _user from the cookie once after hydration is complete.
+  // Using useEffect means server and initial client renders both see null,
+  // which keeps the hydrated HTML consistent.
+  useEffect(() => {
+    _user = readUserCookie();
+    notifyListeners();
+  }, []);
 
-  const setAuth = (user: AuthUser) => {
-    writeUserCookie(user);
-    setUser(user);
-  };
+  const user = useSyncExternalStore(
+    subscribe,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
-  const clearAuth = () => {
+  const setAuth = useCallback((newUser: AuthUser) => {
+    writeUserCookie(newUser);
+    _user = newUser;
+    notifyListeners();
+  }, []);
+
+  const clearAuth = useCallback(() => {
     deleteUserCookie();
-    setUser(null);
-  };
+    _user = null;
+    notifyListeners();
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, setAuth, clearAuth }}>
