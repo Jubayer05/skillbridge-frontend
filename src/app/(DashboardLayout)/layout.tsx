@@ -9,8 +9,9 @@ import {
   getTutorSidebarMenu,
 } from "@/config/sidebar-menus";
 import { useAuth } from "@/context/auth-context";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { useSyncExternalStore } from "react";
 
 const sidebarStyles = {
@@ -42,11 +43,28 @@ export default function DashboardLayout({
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const hasMounted = useHasMounted();
 
   // Before mount every render returns null for the user so server HTML and
   // the initial client hydration tree are identical (no error #418).
   const activeUser = hasMounted ? user : null;
+  const path = pathname ?? "";
+
+  useEffect(() => {
+    if (!hasMounted) return;
+    if (!user) {
+      router.replace(`/auth/login?next=${encodeURIComponent(path || "/dashboard")}`);
+    }
+  }, [hasMounted, user, router, path]);
+
+  if (hasMounted && !user) {
+    return (
+      <div className="p-6">
+        <p className="text-muted-foreground text-sm">Login required.</p>
+      </div>
+    );
+  }
 
   const role = activeUser?.role;
   const isAdmin = role === "ADMIN";
@@ -58,14 +76,25 @@ export default function DashboardLayout({
       : getStudentSidebarMenu(activeUser);
 
   // At /dashboard use the role-specific parallel slot content.
-  // For every other route (sub-pages) render the actual page via children.
-  const isDashboard = pathname === "/dashboard";
+  // Tutor availability and related routes live under the @tutor parallel segment
+  // (`@tutor/tutor/...`), so for /tutor/* we must render that slot, not `children`.
+  const isDashboard = path === "/dashboard";
   const dashboardSlot = isAdmin ? admin : isTutor ? tutor : student;
-  const content = isDashboard ? dashboardSlot : children;
+  const isTutorAppRoute = isTutor && path.startsWith("/tutor/");
+  const content = isDashboard
+    ? dashboardSlot
+    : isTutorAppRoute
+      ? tutor
+      : children;
 
   return (
     <SidebarProvider style={sidebarStyles}>
-      <AppSidebar menu={sidebarMenu} variant="inset" />
+      {hasMounted ? (
+        <AppSidebar menu={sidebarMenu} variant="inset" />
+      ) : (
+        // Avoid SSR hydration mismatches from Radix-generated IDs in the sidebar.
+        <div aria-hidden />
+      )}
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">

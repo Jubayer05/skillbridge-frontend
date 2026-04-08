@@ -33,7 +33,7 @@ type FormValues = z.infer<typeof schema>;
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const token = searchParams?.get("token") ?? "";
   const [done, setDone] = useState(false);
 
   const {

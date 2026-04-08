@@ -13,7 +13,7 @@ const DEMO_ACCOUNTS = [
   {
     label: "Tutor",
     email: "tutor@gmail.com",
-    password: "123456aA!",
+    password: "123456abc!A",
     color:
       "text-violet-500 border-violet-200 hover:bg-violet-50 hover:border-violet-400 dark:border-violet-800 dark:hover:bg-violet-950",
   },

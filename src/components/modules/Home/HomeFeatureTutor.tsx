@@ -1,118 +1,54 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  mapFeaturedApiToItem,
+  type FeatureTutorItem,
+} from "@/lib/featured-tutors";
 import { cn } from "@/lib/utils";
+import { listFeaturedTutors } from "@/services/tutorService";
 import { BookOpen, Star, Users } from "lucide-react";
 
-const RANDOMUSER_BASE = "https://randomuser.me/api/portraits";
+export type { FeatureTutorItem };
 
-export interface FeatureTutorItem {
-  id: string;
-  name: string;
-  avatar: string;
-  courseOffered: string;
-  description: string;
-  rating?: number;
-  studentsCount?: number;
-  coursesCount?: number;
+/** This section never shows more than 8 tutor cards. */
+const MAX_VISIBLE_TUTORS = 8;
+
+function FeatureTutorGridSkeleton({ count }: { count: number }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="flex flex-col overflow-hidden rounded-xl border border-border/60"
+        >
+          <Skeleton className="aspect-4/3 w-full rounded-none" />
+          <div className="space-y-3 p-4 sm:p-5">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <div className="flex gap-2">
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
-
-const defaultTutors: FeatureTutorItem[] = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    avatar: `${RANDOMUSER_BASE}/women/32.jpg`,
-    courseOffered: "Product Design & UI/UX",
-    description:
-      "Former design lead with 10+ years experience. Focus on user research, prototyping, and design systems for web and mobile.",
-    rating: 4.9,
-    studentsCount: 1240,
-    coursesCount: 3,
-  },
-  {
-    id: "2",
-    name: "Marcus Johnson",
-    avatar: `${RANDOMUSER_BASE}/men/22.jpg`,
-    courseOffered: "Full-Stack Development",
-    description:
-      "Senior engineer teaching React, Node.js, and cloud deployment. Hands-on projects and code reviews included in every course.",
-    rating: 4.8,
-    studentsCount: 2100,
-    coursesCount: 5,
-  },
-  {
-    id: "3",
-    name: "Elena Rodriguez",
-    avatar: `${RANDOMUSER_BASE}/women/44.jpg`,
-    courseOffered: "Digital Marketing & Analytics",
-    description:
-      "Marketing director turned instructor. Covers SEO, paid ads, content strategy, and analytics with real campaign walkthroughs.",
-    rating: 4.9,
-    studentsCount: 890,
-    coursesCount: 4,
-  },
-  {
-    id: "4",
-    name: "James Okonkwo",
-    avatar: `${RANDOMUSER_BASE}/men/67.jpg`,
-    courseOffered: "Creative Writing & Storytelling",
-    description:
-      "Published author and editor. Learn structure, voice, and revision—from short stories to long-form nonfiction and memoir.",
-    rating: 4.7,
-    studentsCount: 560,
-    coursesCount: 2,
-  },
-  {
-    id: "5",
-    name: "Priya Sharma",
-    avatar: `${RANDOMUSER_BASE}/women/65.jpg`,
-    courseOffered: "Data Science & Python",
-    description:
-      "Ex-ML engineer teaching Python, pandas, and introductory machine learning. Emphasis on real datasets and portfolio projects.",
-    rating: 4.8,
-    studentsCount: 1780,
-    coursesCount: 4,
-  },
-  {
-    id: "6",
-    name: "David Kim",
-    avatar: `${RANDOMUSER_BASE}/men/45.jpg`,
-    courseOffered: "Photography & Lightroom",
-    description:
-      "Professional photographer. From camera basics to advanced editing and color grading. Includes critique and portfolio reviews.",
-    rating: 4.6,
-    studentsCount: 720,
-    coursesCount: 3,
-  },
-  {
-    id: "7",
-    name: "Amara Okafor",
-    avatar: `${RANDOMUSER_BASE}/women/50.jpg`,
-    courseOffered: "Project Management",
-    description:
-      "PMP-certified PM with experience in tech and consulting. Agile, scrum, and stakeholder communication with practical templates.",
-    rating: 4.9,
-    studentsCount: 1100,
-    coursesCount: 2,
-  },
-  {
-    id: "8",
-    name: "Lucas Müller",
-    avatar: `${RANDOMUSER_BASE}/men/33.jpg`,
-    courseOffered: "German & Language Coaching",
-    description:
-      "Native speaker and language coach. Business German, conversation practice, and exam prep. Custom lessons for your level and goals.",
-    rating: 4.8,
-    studentsCount: 430,
-    coursesCount: 3,
-  },
-];
 
 interface HomeFeatureTutorProps {
   title?: string;
   description?: string;
+  /** When set, skips API fetch and shows this list (e.g. tests). Only the first 8 are shown. */
   tutors?: FeatureTutorItem[];
+  /** Request size for the API; display is still capped at 8. Defaults to 8. */
+  limit?: number;
   viewMoreHref?: string;
   viewMoreLabel?: string;
   className?: string;
@@ -121,11 +57,67 @@ interface HomeFeatureTutorProps {
 export function HomeFeatureTutor({
   title = "Featured tutors",
   description = "Learn from experienced instructors across design, development, marketing, and more.",
-  tutors = defaultTutors,
-  viewMoreHref = "/instructors",
-  viewMoreLabel = "View more tutors",
+  tutors: tutorsProp,
+  limit = MAX_VISIBLE_TUTORS,
+  viewMoreHref = "/categories",
+  viewMoreLabel = "Browse categories",
   className,
 }: HomeFeatureTutorProps) {
+  const fetchLimit = Math.min(limit, MAX_VISIBLE_TUTORS);
+  const controlled = tutorsProp !== undefined;
+  const [remoteTutors, setRemoteTutors] = useState<FeatureTutorItem[]>([]);
+  const [loadingRemote, setLoadingRemote] = useState(!controlled);
+  const [fetchCompleted, setFetchCompleted] = useState(controlled);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (controlled) return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      setLoadingRemote(true);
+      setFetchCompleted(false);
+      setError(null);
+      try {
+        const data = await listFeaturedTutors(fetchLimit);
+        if (cancelled) return;
+        setRemoteTutors(data.map(mapFeaturedApiToItem));
+      } catch (err: unknown) {
+        if (cancelled) return;
+        setError(
+          err instanceof Error ? err.message : "Could not load featured tutors",
+        );
+        setRemoteTutors([]);
+      } finally {
+        if (!cancelled) {
+          setLoadingRemote(false);
+          setFetchCompleted(true);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [controlled, fetchLimit]);
+
+  const loading = controlled ? false : loadingRemote;
+  const displayTutors = useMemo(
+    () => (controlled ? (tutorsProp ?? []) : remoteTutors),
+    [controlled, tutorsProp, remoteTutors],
+  );
+
+  const visibleTutors = useMemo(
+    () => displayTutors.slice(0, MAX_VISIBLE_TUTORS),
+    [displayTutors],
+  );
+
+  const showRemoteEmpty =
+    !controlled && fetchCompleted && !error && displayTutors.length === 0;
+
   return (
     <section
       className={cn(
@@ -153,61 +145,90 @@ export function HomeFeatureTutor({
           )}
         </div>
 
-        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {tutors.map((tutor) => (
-            <article
-              key={tutor.id}
-              className="group flex flex-col rounded-xl border border-border/60 bg-background/80 shadow-sm transition-colors hover:border-border hover:bg-background hover:shadow-md"
-            >
-              <div className="relative aspect-4/3 w-full overflow-hidden rounded-t-xl bg-muted/50">
-                <Image
-                  src={tutor.avatar}
-                  alt=""
-                  className="object-cover transition-transform group-hover:scale-105"
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-              </div>
-              <div className="flex flex-1 flex-col p-4 sm:p-5">
-                <h3 className="font-semibold text-foreground sm:text-lg">
-                  {tutor.name}
-                </h3>
-                <p className="mt-0.5 text-sm font-medium text-primary">
-                  {tutor.courseOffered}
-                </p>
-                <p
-                  className="mt-2 line-clamp-2 text-sm text-muted-foreground"
-                  title={tutor.description}
+        {loading ? (
+          <FeatureTutorGridSkeleton count={fetchLimit} />
+        ) : error ? (
+          <p className="text-center text-sm text-destructive">{error}</p>
+        ) : showRemoteEmpty ? (
+          <p className="text-muted-foreground text-center text-sm">
+            No tutor profiles yet. Check back soon.
+          </p>
+        ) : controlled && displayTutors.length === 0 ? (
+          <p className="text-muted-foreground text-center text-sm">
+            No tutors to show.
+          </p>
+        ) : (
+          <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {visibleTutors.map((tutor) => {
+              const cardClassName =
+                "group flex flex-col rounded-xl border border-border/60 bg-background/80 shadow-sm transition-colors hover:border-border hover:bg-background hover:shadow-md focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
+              const inner = (
+                <>
+                  <div className="relative aspect-4/3 w-full overflow-hidden rounded-t-xl bg-muted/50">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- dynamic tutor / CDN URLs */}
+                    <img
+                      src={tutor.avatar}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-4 sm:p-5">
+                    <h3 className="font-semibold text-foreground sm:text-lg">
+                      {tutor.name}
+                    </h3>
+                    <p className="mt-0.5 text-sm font-medium text-primary">
+                      {tutor.courseOffered}
+                    </p>
+                    <p
+                      className="mt-2 line-clamp-2 text-sm text-muted-foreground"
+                      title={tutor.description}
+                    >
+                      {tutor.description}
+                    </p>
+                    <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      {tutor.rating != null && (
+                        <span className="flex items-center gap-1">
+                          <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                          {tutor.rating}
+                        </span>
+                      )}
+                      {tutor.studentsCount != null &&
+                        tutor.studentsCount > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Users className="size-3.5" />
+                            {tutor.studentsCount >= 1000
+                              ? `${(tutor.studentsCount / 1000).toFixed(1)}k`
+                              : tutor.studentsCount}{" "}
+                            reviews
+                          </span>
+                        )}
+                      {tutor.coursesCount != null &&
+                        tutor.coursesCount > 0 && (
+                          <span className="flex items-center gap-1">
+                            <BookOpen className="size-3.5" />
+                            {tutor.coursesCount} subjects
+                          </span>
+                        )}
+                    </div>
+                  </div>
+                </>
+              );
+              return tutor.userId ? (
+                <Link
+                  key={tutor.id}
+                  href={`/tutors/${encodeURIComponent(tutor.userId)}/slots`}
+                  className={cardClassName}
                 >
-                  {tutor.description}
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                  {tutor.rating != null && (
-                    <span className="flex items-center gap-1">
-                      <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                      {tutor.rating}
-                    </span>
-                  )}
-                  {tutor.studentsCount != null && (
-                    <span className="flex items-center gap-1">
-                      <Users className="size-3.5" />
-                      {tutor.studentsCount >= 1000
-                        ? `${(tutor.studentsCount / 1000).toFixed(1)}k`
-                        : tutor.studentsCount}{" "}
-                      students
-                    </span>
-                  )}
-                  {tutor.coursesCount != null && (
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="size-3.5" />
-                      {tutor.coursesCount} courses
-                    </span>
-                  )}
+                  {inner}
+                </Link>
+              ) : (
+                <div key={tutor.id} className={cardClassName}>
+                  {inner}
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         <div className="mt-10 flex justify-center sm:mt-12">
           <Button asChild variant="outline" size="lg" className="rounded-full">

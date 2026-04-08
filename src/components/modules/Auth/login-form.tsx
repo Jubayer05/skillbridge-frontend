@@ -49,7 +49,7 @@ export function LoginForm() {
         const session = res.data?.session as AuthSessionInfo | null | undefined;
         setAuth(user, session?.expiresAt ?? null);
         toast.success(`Welcome back, ${user.name}!`);
-        router.push("/dashboard");
+        router.push(user.role === "TUTOR" ? "/tutor/dashboard" : "/dashboard");
       })
       .catch((error: Error) => {
         toast.error(error.message ?? "Login failed. Please try again.");

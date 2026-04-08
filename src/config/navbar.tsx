@@ -1,11 +1,7 @@
 "use client";
 
+import type { MenuItem, NavbarAuth, NavbarLogo } from "@/types/navbar";
 import { Book, Sunset, Trees, Zap } from "lucide-react";
-import type {
-  MenuItem,
-  NavbarAuth,
-  NavbarLogo,
-} from "@/types/navbar";
 
 export const defaultNavbarLogo: NavbarLogo = {
   url: "/",
@@ -16,30 +12,6 @@ export const defaultNavbarLogo: NavbarLogo = {
 
 export const defaultNavbarMenu: MenuItem[] = [
   { title: "Home", url: "#" },
-  {
-    title: "Dashboards",
-    url: "#",
-    items: [
-      {
-        title: "User Dashboard",
-        description: "The latest industry news, updates, and info",
-        icon: <Book className="size-5 shrink-0" />,
-        url: "/user/dashboard",
-      },
-      {
-        title: "Tutor Dashboard",
-        description: "Manage your courses and students",
-        icon: <Trees className="size-5 shrink-0" />,
-        url: "/tutor/dashboard",
-      },
-      {
-        title: "Admin Dashboard",
-        description: "Browse job listing and discover our workspace",
-        icon: <Sunset className="size-5 shrink-0" />,
-        url: "/admin/dashboard",
-      },
-    ],
-  },
   {
     title: "Resources",
     url: "#",
@@ -71,12 +43,12 @@ export const defaultNavbarMenu: MenuItem[] = [
     ],
   },
   {
-    title: "Pricing",
-    url: "#",
+    title: "Categories",
+    url: "/categories",
   },
   {
-    title: "Blog",
-    url: "#",
+    title: "Subjects",
+    url: "/subjects",
   },
 ];
 

@@ -12,8 +12,8 @@ import { sendVerificationEmail } from "@/services/auth";
 
 export function VerifyEmailNotice() {
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
-  const token = searchParams.get("token") ?? "";
+  const email = searchParams?.get("email") ?? "";
+  const token = searchParams?.get("token") ?? "";
   const [resending, setResending] = useState(false);
 
   useEffect(() => {

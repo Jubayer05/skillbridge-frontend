@@ -1,7 +1,9 @@
-import type { AppSidebarMenuProps } from "@/types/sidebar";
 import type { AuthUser } from "@/types/auth";
+import type { AppSidebarMenuProps } from "@/types/sidebar";
 
-export function getAdminSidebarMenu(user: AuthUser | null): AppSidebarMenuProps {
+export function getAdminSidebarMenu(
+  user: AuthUser | null,
+): AppSidebarMenuProps {
   return {
     navMain: [
       {
@@ -33,6 +35,15 @@ export function getAdminSidebarMenu(user: AuthUser | null): AppSidebarMenuProps 
           { title: "Notifications", url: "/admin/settings/notifications" },
         ],
       },
+      {
+        title: "Catalog",
+        url: "/dashboard/categories",
+        icon: "FolderTree",
+        items: [
+          { title: "Categories", url: "/dashboard/categories" },
+          { title: "Subjects", url: "/dashboard/subjects" },
+        ],
+      },
     ],
     projects: [
       {
@@ -54,7 +65,9 @@ export function getAdminSidebarMenu(user: AuthUser | null): AppSidebarMenuProps 
   };
 }
 
-export function getStudentSidebarMenu(user: AuthUser | null): AppSidebarMenuProps {
+export function getStudentSidebarMenu(
+  user: AuthUser | null,
+): AppSidebarMenuProps {
   return {
     navMain: [
       {
@@ -62,6 +75,10 @@ export function getStudentSidebarMenu(user: AuthUser | null): AppSidebarMenuProp
         url: "/dashboard",
         icon: "LayoutDashboard",
         isActive: true,
+        items: [
+          { title: "Overview", url: "/dashboard" },
+          { title: "Profile", url: "/dashboard/profile" },
+        ],
       },
       {
         title: "My learning",
@@ -77,7 +94,7 @@ export function getStudentSidebarMenu(user: AuthUser | null): AppSidebarMenuProp
         url: "/student/settings",
         icon: "Settings",
         items: [
-          { title: "Profile", url: "/student/settings/profile" },
+          { title: "Profile", url: "/dashboard/profile" },
           { title: "Notifications", url: "/student/settings/notifications" },
         ],
       },
@@ -102,52 +119,39 @@ export function getStudentSidebarMenu(user: AuthUser | null): AppSidebarMenuProp
   };
 }
 
-export function getTutorSidebarMenu(user: AuthUser | null): AppSidebarMenuProps {
+// Tutor availability pages live under `@tutor/tutor/availability/*` → `/tutor/availability/...`.
+export function getTutorSidebarMenu(
+  user: AuthUser | null,
+): AppSidebarMenuProps {
   return {
     navMain: [
       {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: "LayoutDashboard",
+        title: "Availability",
+        url: "/tutor/availability",
+        icon: "Calendar",
         isActive: true,
         items: [
-          { title: "Overview", url: "/dashboard" },
-          { title: "My Courses", url: "/tutor/courses" },
-          { title: "Students", url: "/tutor/students" },
+          { title: "My slots", url: "/tutor/availability" },
+          { title: "New slot", url: "/tutor/availability/new" },
         ],
       },
       {
-        title: "Course Management",
-        url: "/tutor/courses",
-        icon: "BookOpen",
+        title: "Catalog",
+        url: "/dashboard/categories",
+        icon: "FolderTree",
         items: [
-          { title: "All Courses", url: "/tutor/courses" },
-          { title: "Create Course", url: "/tutor/courses/create" },
-          { title: "Assignments", url: "/tutor/assignments" },
+          { title: "Categories", url: "/dashboard/categories" },
+          { title: "Subjects", url: "/dashboard/subjects" },
         ],
       },
       {
         title: "Settings",
-        url: "/tutor/settings",
+        url: "/dashboard/profile",
         icon: "Settings",
-        items: [
-          { title: "Profile", url: "/tutor/settings/profile" },
-          { title: "Notifications", url: "/tutor/settings/notifications" },
-        ],
+        items: [{ title: "Profile", url: "/dashboard/profile" }],
       },
     ],
-    projects: [
-      {
-        name: "Active Courses",
-        url: "/tutor/courses?filter=active",
-        icon: "Frame",
-      },
-      {
-        name: "Draft Courses",
-        url: "/tutor/courses?filter=draft",
-        icon: "PieChart",
-      },
-    ],
+    projects: [],
     user: {
       name: user?.name ?? "Tutor",
       email: user?.email ?? "",

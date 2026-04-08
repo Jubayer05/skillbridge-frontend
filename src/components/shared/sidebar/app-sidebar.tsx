@@ -4,7 +4,9 @@ import {
   AudioWaveform,
   BookOpen,
   Bot,
+  Calendar,
   Command,
+  FolderTree,
   Frame,
   GalleryVerticalEnd,
   LayoutDashboard,
@@ -14,8 +16,11 @@ import {
   SquareTerminal,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import * as React from "react";
 
+import { defaultNavbarLogo } from "@/config/navbar";
 import { NavMain } from "@/components/shared/sidebar/nav-main";
 import { NavProjects } from "@/components/shared/sidebar/nav-projects";
 import { NavUser } from "@/components/shared/sidebar/nav-user";
@@ -25,6 +30,9 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 import type { AppSidebarMenuProps } from "@/types/sidebar";
@@ -34,6 +42,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   SquareTerminal,
   Bot,
   BookOpen,
+  Calendar,
   Settings: Settings2,
   Settings2,
   Frame,
@@ -42,6 +51,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   GalleryVerticalEnd,
   AudioWaveform,
   Command,
+  FolderTree,
 };
 
 function resolveIcon(name: string | undefined): LucideIcon | undefined {
@@ -90,11 +100,57 @@ export function AppSidebar({
 
   return (
     <Sidebar collapsible="icon" {...sidebarProps}>
-      {teamsResolved.length > 0 && (
-        <SidebarHeader>
-          <TeamSwitcher teams={teamsResolved} />
-        </SidebarHeader>
-      )}
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link
+                href={defaultNavbarLogo.url}
+                className="flex min-w-0 items-center gap-2 overflow-hidden"
+              >
+                <span className="relative flex h-8 w-[120px] shrink-0 items-center group-data-[collapsible=icon]:hidden">
+                  <Image
+                    src={defaultNavbarLogo.src}
+                    alt={defaultNavbarLogo.alt}
+                    width={120}
+                    height={32}
+                    className="h-8 w-auto max-w-[120px] object-contain object-left dark:hidden"
+                    priority
+                  />
+                  <Image
+                    src="/logo/logo-dark.png"
+                    alt={defaultNavbarLogo.alt}
+                    width={120}
+                    height={32}
+                    className="hidden h-8 w-auto max-w-[120px] object-contain object-left dark:inline-block"
+                    priority
+                  />
+                </span>
+                <span className="relative hidden size-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-sidebar-border bg-sidebar group-data-[collapsible=icon]:flex">
+                  <Image
+                    src={defaultNavbarLogo.src}
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="size-8 object-contain dark:hidden"
+                    aria-hidden
+                  />
+                  <Image
+                    src="/logo/logo-dark.png"
+                    alt=""
+                    width={32}
+                    height={32}
+                    className="hidden size-8 object-contain dark:block"
+                    aria-hidden
+                  />
+                </span>
+                <span className="sr-only">{defaultNavbarLogo.title}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        {teamsResolved.length > 0 && <TeamSwitcher teams={teamsResolved} />}
+      </SidebarHeader>
       <SidebarContent>
         {navMainResolved.length > 0 && <NavMain items={navMainResolved} />}
         {projectsResolved.length > 0 && (
