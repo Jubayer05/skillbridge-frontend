@@ -2,8 +2,39 @@
  * Use same-origin API paths by default so auth/session cookies stay first-party
  * in production deployments (e.g. Vercel), avoiding cross-site cookie drops.
  */
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
+const isBrowser = typeof window !== "undefined";
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+const backendOrigin = (process.env.BACKEND_URL ?? "http://localhost:4000").replace(
+  /\/$/,
+  "",
+);
+
+function resolveServerBaseUrl(): string {
+  if (!configuredApiUrl) return `${backendOrigin}/api/v1`;
+  if (/^https?:\/\//i.test(configuredApiUrl)) {
+    return configuredApiUrl.replace(/\/$/, "");
+  }
+  if (configuredApiUrl.startsWith("/")) {
+    return `${backendOrigin}${configuredApiUrl}`;
+  }
+  return `${backendOrigin}/${configuredApiUrl}`;
+}
+
+const BASE_URL = isBrowser ? "/api/v1" : resolveServerBaseUrl();
 const AUTH_BASE_URL = BASE_URL.replace(/\/api\/v1$/, "/api/auth");
+
+function withQuery(
+  base: string,
+  params: Record<string, string | number | null | undefined>,
+): string {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === null || String(v).trim() === "") continue;
+    q.set(k, String(v));
+  }
+  const qs = q.toString();
+  return qs ? `${base}?${qs}` : base;
+}
 
 export const API_ENDPOINTS = {
   auth: {
@@ -67,43 +98,34 @@ export const API_ENDPOINTS = {
       q?: string;
       sort?: string;
     }) => {
-      const u = new URL(`${BASE_URL}/tutors`);
-      if (params?.page != null) u.searchParams.set("page", String(params.page));
-      if (params?.limit != null)
-        u.searchParams.set("limit", String(params.limit));
-      if (params?.categoryId)
-        u.searchParams.set("categoryId", params.categoryId);
-      if (params?.minPrice != null)
-        u.searchParams.set("minPrice", String(params.minPrice));
-      if (params?.maxPrice != null)
-        u.searchParams.set("maxPrice", String(params.maxPrice));
-      if (params?.minRating != null)
-        u.searchParams.set("minRating", String(params.minRating));
-      if (params?.q?.trim()) u.searchParams.set("q", params.q.trim());
-      if (params?.sort) u.searchParams.set("sort", params.sort);
-      return u.toString();
+      return withQuery(`${BASE_URL}/tutors`, {
+        page: params?.page,
+        limit: params?.limit,
+        categoryId: params?.categoryId,
+        minPrice: params?.minPrice,
+        maxPrice: params?.maxPrice,
+        minRating: params?.minRating,
+        q: params?.q?.trim(),
+        sort: params?.sort,
+      });
     },
     detail: (
       userId: string,
       params?: { reviewsPage?: number; reviewsLimit?: number },
     ) => {
-      const u = new URL(
-        `${BASE_URL}/tutors/${encodeURIComponent(userId)}`,
-      );
-      if (params?.reviewsPage != null)
-        u.searchParams.set("reviewsPage", String(params.reviewsPage));
-      if (params?.reviewsLimit != null)
-        u.searchParams.set("reviewsLimit", String(params.reviewsLimit));
-      return u.toString();
+      return withQuery(`${BASE_URL}/tutors/${encodeURIComponent(userId)}`, {
+        reviewsPage: params?.reviewsPage,
+        reviewsLimit: params?.reviewsLimit,
+      });
     },
     reviews: (userId: string, params?: { page?: number; limit?: number }) => {
-      const u = new URL(
+      return withQuery(
         `${BASE_URL}/tutors/${encodeURIComponent(userId)}/reviews`,
+        {
+          page: params?.page,
+          limit: params?.limit,
+        },
       );
-      if (params?.page != null) u.searchParams.set("page", String(params.page));
-      if (params?.limit != null)
-        u.searchParams.set("limit", String(params.limit));
-      return u.toString();
     },
   },
   bookings: {
