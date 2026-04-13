@@ -8,12 +8,16 @@ export async function listBookings(params?: {
   from?: string;
   to?: string;
 }): Promise<Booking[]> {
-  const url = new URL(API_ENDPOINTS.bookings.list);
-  if (params?.status) url.searchParams.set("status", params.status);
-  if (params?.from) url.searchParams.set("from", params.from);
-  if (params?.to) url.searchParams.set("to", params.to);
+  const search = new URLSearchParams();
+  if (params?.status) search.set("status", params.status);
+  if (params?.from) search.set("from", params.from);
+  if (params?.to) search.set("to", params.to);
+  const query = search.toString();
+  const url = query
+    ? `${API_ENDPOINTS.bookings.list}?${query}`
+    : API_ENDPOINTS.bookings.list;
 
-  const res = await apiFetch<Booking[]>(url.toString());
+  const res = await apiFetch<Booking[]>(url);
   return (res.data ?? []).map((b) => normalizeBooking(b));
 }
 

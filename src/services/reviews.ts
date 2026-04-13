@@ -38,11 +38,15 @@ export async function listMyTutorDashboardReviews(params?: {
   page?: number;
   limit?: number;
 }): Promise<PaginatedTutorDashboardReviews> {
-  const url = new URL(API_ENDPOINTS.profile.tutorMyReviews);
-  if (params?.page != null) url.searchParams.set("page", String(params.page));
-  if (params?.limit != null) url.searchParams.set("limit", String(params.limit));
+  const search = new URLSearchParams();
+  if (params?.page != null) search.set("page", String(params.page));
+  if (params?.limit != null) search.set("limit", String(params.limit));
+  const query = search.toString();
+  const url = query
+    ? `${API_ENDPOINTS.profile.tutorMyReviews}?${query}`
+    : API_ENDPOINTS.profile.tutorMyReviews;
 
-  const res = await apiFetch<PaginatedTutorDashboardReviews>(url.toString(), {
+  const res = await apiFetch<PaginatedTutorDashboardReviews>(url, {
     method: "GET",
   });
   if (!res.data) {

@@ -14,12 +14,13 @@ function buildUsersUrl(params: {
   role?: Role | "";
   q?: string;
 }): string {
-  const u = new URL(API_ENDPOINTS.admin.users);
-  if (params.page != null) u.searchParams.set("page", String(params.page));
-  if (params.limit != null) u.searchParams.set("limit", String(params.limit));
-  if (params.role) u.searchParams.set("role", params.role);
-  if (params.q?.trim()) u.searchParams.set("q", params.q.trim());
-  return u.toString();
+  const search = new URLSearchParams();
+  if (params.page != null) search.set("page", String(params.page));
+  if (params.limit != null) search.set("limit", String(params.limit));
+  if (params.role) search.set("role", params.role);
+  if (params.q?.trim()) search.set("q", params.q.trim());
+  const query = search.toString();
+  return query ? `${API_ENDPOINTS.admin.users}?${query}` : API_ENDPOINTS.admin.users;
 }
 
 function buildBookingsUrl(params: {
@@ -28,12 +29,15 @@ function buildBookingsUrl(params: {
   status?: string;
   q?: string;
 }): string {
-  const u = new URL(API_ENDPOINTS.admin.bookings);
-  if (params.page != null) u.searchParams.set("page", String(params.page));
-  if (params.limit != null) u.searchParams.set("limit", String(params.limit));
-  if (params.status) u.searchParams.set("status", params.status);
-  if (params.q?.trim()) u.searchParams.set("q", params.q.trim());
-  return u.toString();
+  const search = new URLSearchParams();
+  if (params.page != null) search.set("page", String(params.page));
+  if (params.limit != null) search.set("limit", String(params.limit));
+  if (params.status) search.set("status", params.status);
+  if (params.q?.trim()) search.set("q", params.q.trim());
+  const query = search.toString();
+  return query
+    ? `${API_ENDPOINTS.admin.bookings}?${query}`
+    : API_ENDPOINTS.admin.bookings;
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {
