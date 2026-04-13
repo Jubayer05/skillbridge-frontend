@@ -58,6 +58,13 @@ export default function DashboardLayout({
     }
   }, [hasMounted, user, router, path]);
 
+  useEffect(() => {
+    if (!hasMounted || !user) return;
+    if (user.role === "ADMIN" && path === "/dashboard") {
+      router.replace("/admin");
+    }
+  }, [hasMounted, user, path, router]);
+
   if (hasMounted && !user) {
     return (
       <div className="p-6">

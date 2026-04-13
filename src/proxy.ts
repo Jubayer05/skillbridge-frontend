@@ -73,7 +73,8 @@ export function proxy(request: NextRequest) {
   );
 
   if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const dest = role === "ADMIN" ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   // ── Role-based access control ─────────────────────────────────────────────
@@ -108,6 +109,7 @@ export const config = {
   matcher: [
     "/dashboard",
     "/dashboard/:path*",
+    "/admin",
     "/admin/:path*",
     "/student/:path*",
     "/tutor/:path*",

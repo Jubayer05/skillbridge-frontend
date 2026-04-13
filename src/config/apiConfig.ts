@@ -46,7 +46,53 @@ export const API_ENDPOINTS = {
     adminDelete: (id: string) =>
       `${BASE_URL}/admin/reviews/${encodeURIComponent(id)}`,
   },
+  admin: {
+    users: `${BASE_URL}/admin/users`,
+    user: (id: string) =>
+      `${BASE_URL}/admin/users/${encodeURIComponent(id)}`,
+    bookings: `${BASE_URL}/admin/bookings`,
+    stats: `${BASE_URL}/admin/stats`,
+  },
   tutors: {
+    list: (params?: {
+      page?: number;
+      limit?: number;
+      categoryId?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      minRating?: number;
+      q?: string;
+      sort?: string;
+    }) => {
+      const u = new URL(`${BASE_URL}/tutors`);
+      if (params?.page != null) u.searchParams.set("page", String(params.page));
+      if (params?.limit != null)
+        u.searchParams.set("limit", String(params.limit));
+      if (params?.categoryId)
+        u.searchParams.set("categoryId", params.categoryId);
+      if (params?.minPrice != null)
+        u.searchParams.set("minPrice", String(params.minPrice));
+      if (params?.maxPrice != null)
+        u.searchParams.set("maxPrice", String(params.maxPrice));
+      if (params?.minRating != null)
+        u.searchParams.set("minRating", String(params.minRating));
+      if (params?.q?.trim()) u.searchParams.set("q", params.q.trim());
+      if (params?.sort) u.searchParams.set("sort", params.sort);
+      return u.toString();
+    },
+    detail: (
+      userId: string,
+      params?: { reviewsPage?: number; reviewsLimit?: number },
+    ) => {
+      const u = new URL(
+        `${BASE_URL}/tutors/${encodeURIComponent(userId)}`,
+      );
+      if (params?.reviewsPage != null)
+        u.searchParams.set("reviewsPage", String(params.reviewsPage));
+      if (params?.reviewsLimit != null)
+        u.searchParams.set("reviewsLimit", String(params.reviewsLimit));
+      return u.toString();
+    },
     reviews: (userId: string, params?: { page?: number; limit?: number }) => {
       const u = new URL(
         `${BASE_URL}/tutors/${encodeURIComponent(userId)}/reviews`,

@@ -1,5 +1,6 @@
 "use client";
 
+import { API_ENDPOINTS } from "@/config/apiConfig";
 import type { AuthUser } from "@/types/auth";
 import {
   createContext,
@@ -8,6 +9,9 @@ import {
   useEffect,
   useSyncExternalStore,
 } from "react";
+
+/** How often to confirm the server session is still valid (legacy cookies / early revocation). */
+const SESSION_VALIDATE_INTERVAL_MS = 90_000;
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -178,20 +182,49 @@ function clearSessionExpiryTimer() {
   }
 }
 
+type SessionEndReason = "logout" | "expired";
+
+function clearClientAuthState(reason: SessionEndReason) {
+  clearSessionExpiryTimer();
+  deleteUserCookie();
+  _user = null;
+  notifyListeners();
+  if (
+    reason === "expired" &&
+    typeof window !== "undefined"
+  ) {
+    window.dispatchEvent(new CustomEvent("skillbridge:session-expired"));
+  }
+}
+
 function scheduleSessionExpiry(sessionExpiresAt: string | null | undefined) {
   clearSessionExpiryTimer();
   if (!sessionExpiresAt || Number.isNaN(Date.parse(sessionExpiresAt))) return;
   const ms = Date.parse(sessionExpiresAt) - Date.now();
-  if (ms <= 0) return;
+  if (ms <= 0) {
+    clearClientAuthState("expired");
+    return;
+  }
   sessionExpiryTimer = setTimeout(() => {
     sessionExpiryTimer = null;
-    deleteUserCookie();
-    _user = null;
-    notifyListeners();
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("skillbridge:session-expired"));
-    }
+    clearClientAuthState("expired");
   }, ms);
+}
+
+async function validateSessionWithServer(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const res = await fetch(API_ENDPOINTS.profile.get, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (res.status === 401 || res.status === 403) {
+      clearClientAuthState("expired");
+    }
+  } catch {
+    // Network errors: keep local session; next poll or navigation may recover.
+  }
 }
 
 function notifyListeners() {
@@ -223,6 +256,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       scheduleSessionExpiry(stored.sessionExpiresAt);
     }
     notifyListeners();
+    if (_user) {
+      void validateSessionWithServer();
+    }
   }, []);
 
   const user = useSyncExternalStore(
@@ -231,15 +267,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getServerSnapshot,
   );
 
+  useEffect(() => {
+    if (!user) return;
+
+    const tick = () => {
+      void validateSessionWithServer();
+    };
+
+    const id = window.setInterval(tick, SESSION_VALIDATE_INTERVAL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user]);
+
   const setAuth = useCallback(
     (newUser: AuthUser, sessionExpiresAt?: string | number | null) => {
       _user = newUser;
       const sync = () => {
-        let stored = readStoredAuth();
-        if (!stored?.user?.id) {
-          writeUserCookie(newUser, sessionExpiresAt ?? null);
-          stored = readStoredAuth();
-        }
+        writeUserCookie(newUser, sessionExpiresAt ?? null);
+        const stored = readStoredAuth();
         scheduleSessionExpiry(stored?.sessionExpiresAt ?? null);
         notifyListeners();
       };
@@ -249,10 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const clearAuth = useCallback(() => {
-    clearSessionExpiryTimer();
-    deleteUserCookie();
-    _user = null;
-    notifyListeners();
+    clearClientAuthState("logout");
   }, []);
 
   return (

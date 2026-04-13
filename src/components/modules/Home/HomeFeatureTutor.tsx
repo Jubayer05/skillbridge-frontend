@@ -59,8 +59,8 @@ export function HomeFeatureTutor({
   description = "Learn from experienced instructors across design, development, marketing, and more.",
   tutors: tutorsProp,
   limit = MAX_VISIBLE_TUTORS,
-  viewMoreHref = "/categories",
-  viewMoreLabel = "Browse categories",
+  viewMoreHref = "/tutors",
+  viewMoreLabel = "Browse all tutors",
   className,
 }: HomeFeatureTutorProps) {
   const fetchLimit = Math.min(limit, MAX_VISIBLE_TUTORS);

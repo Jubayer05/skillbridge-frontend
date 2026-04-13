@@ -47,6 +47,10 @@ export const defaultNavbarMenu: MenuItem[] = [
     url: "/categories",
   },
   {
+    title: "Tutors",
+    url: "/tutors",
+  },
+  {
     title: "Subjects",
     url: "/subjects",
   },

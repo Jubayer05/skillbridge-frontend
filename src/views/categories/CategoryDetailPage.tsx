@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
 import { deleteCategory } from "@/services/categoryService";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 function paramId(
@@ -19,10 +19,14 @@ function paramId(
 export default function CategoryDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const categoriesBase = pathname.startsWith("/admin/categories")
+    ? "/admin/categories"
+    : "/dashboard/categories";
   const { user } = useAuth();
   const categoryId = paramId(params?.categoryId);
   const canManage = user?.role === "ADMIN" || user?.role === "TUTOR";
-  const isAdmin = user?.role === "ADMIN";
+  const isAdminRole = user?.role === "ADMIN";
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -35,7 +39,7 @@ export default function CategoryDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (!isAdmin) return;
+    if (!isAdminRole) return;
     if (!window.confirm("Delete this category? This cannot be undone.")) {
       return;
     }
@@ -43,7 +47,11 @@ export default function CategoryDetailPage() {
     setDeleteError(null);
     try {
       await deleteCategory(categoryId);
-      router.push("/categories");
+      router.push(
+        pathname.startsWith("/admin/categories")
+          ? "/admin/categories"
+          : "/dashboard/categories",
+      );
     } catch (err: unknown) {
       setDeleteError(
         err instanceof Error ? err.message : "Something went wrong",
@@ -58,9 +66,9 @@ export default function CategoryDetailPage() {
       {canManage ? (
         <div className="flex flex-wrap items-center gap-2 border-b px-4 pt-4 pb-2 md:px-6">
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard/categories/${categoryId}/edit`}>Edit</Link>
+            <Link href={`${categoriesBase}/${categoryId}/edit`}>Edit</Link>
           </Button>
-          {isAdmin ? (
+          {isAdminRole ? (
             <Button
               variant="destructive"
               size="sm"

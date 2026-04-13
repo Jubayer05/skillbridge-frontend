@@ -15,11 +15,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTutorProfileByUserId } from "@/services/profile";
-import type { PublicTutorProfile } from "@/types/profile";
+import { getTutorPublicDetail } from "@/services/tutorsBrowse";
+import type { TutorPublicDetail } from "@/types/tutor-discovery";
 
 export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
-  const [profile, setProfile] = useState<PublicTutorProfile | null>(null);
+  const [detail, setDetail] = useState<TutorPublicDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,15 +27,15 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
     let active = true;
     setLoading(true);
     setError(null);
-    getTutorProfileByUserId(tutorUserId)
-      .then((p) => {
+    getTutorPublicDetail(tutorUserId, { reviewsPage: 1, reviewsLimit: 10 })
+      .then((d) => {
         if (!active) return;
-        setProfile(p);
+        setDetail(d);
       })
       .catch((err: Error) => {
         if (!active) return;
         setError(err.message ?? "Could not load tutor");
-        setProfile(null);
+        setDetail(null);
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -54,19 +54,20 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
     );
   }
 
-  if (error || !profile) {
+  if (error || !detail) {
     return (
       <div className="p-4 md:p-6">
         <p className="text-destructive text-sm">
           {error ?? "This tutor does not have a public profile yet."}
         </p>
         <Button asChild variant="outline" className="mt-4">
-          <Link href="/">Back to home</Link>
+          <Link href="/tutors">Browse tutors</Link>
         </Button>
       </div>
     );
   }
 
+  const profile = detail.tutor;
   const ratingNum =
     profile.rating != null && profile.rating !== ""
       ? Number(profile.rating)
@@ -76,7 +77,7 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
     <div className="space-y-10 p-4 md:p-6">
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild variant="ghost" size="sm">
-          <Link href="/">← Home</Link>
+          <Link href="/tutors">← All tutors</Link>
         </Button>
       </div>
 
@@ -84,9 +85,7 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <CardTitle className="text-2xl">
-                {profile.user.name}
-              </CardTitle>
+              <CardTitle className="text-2xl">{profile.user.name}</CardTitle>
               <CardDescription className="mt-1 text-base">
                 {profile.headline}
               </CardDescription>
@@ -97,7 +96,9 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
           </div>
           <div className="text-muted-foreground mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
             <span>
-              <span className="text-foreground font-medium">${profile.hourlyRate}</span>
+              <span className="text-foreground font-medium">
+                ${profile.hourlyRate}
+              </span>
               /hr
             </span>
             <span className="flex items-center gap-2">
@@ -105,7 +106,7 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
                 <>
                   <StaticStars value={ratingNum} />
                   <span className="text-foreground font-medium tabular-nums">
-                    {profile.rating}
+                    {detail.averageRating ?? profile.rating}
                   </span>
                   <span>({profile.totalReviews} reviews)</span>
                 </>
@@ -115,12 +116,69 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
             </span>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm leading-relaxed">
-          <p className="text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
+        <CardContent className="space-y-6 text-sm leading-relaxed">
+          {profile.categories.length > 0 ? (
+            <div>
+              <h3 className="text-foreground mb-2 font-semibold">Categories</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.categories.map((c) => (
+                  <Badge key={c.id} variant="outline">
+                    {c.name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          <div>
+            <h3 className="text-foreground mb-2 font-semibold">About</h3>
+            <p className="text-muted-foreground whitespace-pre-wrap">
+              {profile.bio}
+            </p>
+            <ul className="text-muted-foreground mt-3 list-inside list-disc space-y-1">
+              <li>
+                Experience: {profile.experience} years
+              </li>
+              <li>Education: {profile.education}</li>
+              {profile.languages.length > 0 ? (
+                <li>Languages: {profile.languages.join(", ")}</li>
+              ) : null}
+            </ul>
+          </div>
+
+          {profile.subjects.length > 0 ? (
+            <div>
+              <h3 className="text-foreground mb-2 font-semibold">Subjects</h3>
+              <ul className="text-muted-foreground space-y-1">
+                {profile.subjects.map((s) => (
+                  <li key={s.id}>
+                    <span className="text-foreground font-medium">
+                      {s.name}
+                    </span>{" "}
+                    · {s.category.name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          <div className="rounded-lg border border-dashed border-border/80 bg-muted/30 p-4">
+            <h3 className="text-foreground font-semibold">Availability</h3>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Calendar view is coming soon. Open available slots to book a
+              session.
+            </p>
+          </div>
+
           <div className="flex flex-wrap gap-2">
-            <Button asChild>
+            <Button asChild size="lg">
               <Link href={`/tutors/${encodeURIComponent(tutorUserId)}/slots`}>
-                View availability & book
+                Book session
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href={`/tutors/${encodeURIComponent(tutorUserId)}/slots`}>
+                View availability
               </Link>
             </Button>
           </div>
@@ -134,7 +192,11 @@ export function TutorPublicProfile({ tutorUserId }: { tutorUserId: string }) {
             Feedback from students after completed sessions.
           </p>
         </div>
-        <TutorReviewsSection key={tutorUserId} tutorUserId={tutorUserId} />
+        <TutorReviewsSection
+          key={tutorUserId}
+          tutorUserId={tutorUserId}
+          initialReviews={detail.reviews}
+        />
       </section>
     </div>
   );

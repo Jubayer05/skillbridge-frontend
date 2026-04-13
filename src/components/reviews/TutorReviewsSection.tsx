@@ -12,21 +12,42 @@ import {
 } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listTutorReviews } from "@/services/reviews";
+import type { PaginatedReviews } from "@/types/review";
 import type { Review } from "@/types/review";
 
 import { ReviewCard } from "./ReviewCard";
 
 const PAGE_SIZE = 10;
 
-export function TutorReviewsSection({ tutorUserId }: { tutorUserId: string }) {
+export function TutorReviewsSection({
+  tutorUserId,
+  initialReviews,
+}: {
+  tutorUserId: string;
+  /** When set (e.g. from GET /tutors/:id), skips the first-page fetch. */
+  initialReviews?: PaginatedReviews | null;
+}) {
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [items, setItems] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(
+    () => initialReviews?.totalPages ?? 0,
+  );
+  const [total, setTotal] = useState(() => initialReviews?.total ?? 0);
+  const [items, setItems] = useState<Review[]>(
+    () => initialReviews?.data ?? [],
+  );
+  const [loading, setLoading] = useState(() => !initialReviews);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialReviews && page === 1) {
+      setTotalPages(initialReviews.totalPages);
+      setTotal(initialReviews.total);
+      setItems(initialReviews.data);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     let active = true;
     setLoading(true);
     setError(null);
@@ -48,6 +69,9 @@ export function TutorReviewsSection({ tutorUserId }: { tutorUserId: string }) {
     return () => {
       active = false;
     };
+    // initialReviews only seeds page 1; omit from deps to avoid resets when the
+    // parent re-renders with a new object reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see above
   }, [tutorUserId, page]);
 
   if (loading && page === 1) {

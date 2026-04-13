@@ -23,9 +23,12 @@ export default function CategoryList() {
   const router = useRouter();
   const pathname = usePathname();
   const { categories, loading, error } = useCategories();
-  const base = (pathname ?? "").startsWith("/dashboard/")
-    ? "/dashboard/categories"
-    : "/categories";
+  const path = pathname ?? "";
+  const base = path.startsWith("/admin/categories")
+    ? "/admin/categories"
+    : path.startsWith("/dashboard/")
+      ? "/dashboard/categories"
+      : "/categories";
 
   if (loading) {
     return <CategoryListSkeleton />;

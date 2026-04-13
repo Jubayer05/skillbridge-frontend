@@ -16,6 +16,7 @@ import {
   Settings2,
   SquareTerminal,
   Star,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -56,6 +57,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   AudioWaveform,
   Command,
   FolderTree,
+  Users,
 };
 
 function resolveIcon(name: string | undefined): LucideIcon | undefined {

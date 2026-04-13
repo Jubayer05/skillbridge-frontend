@@ -7,56 +7,39 @@ export function getAdminSidebarMenu(
   return {
     navMain: [
       {
-        title: "Dashboard",
-        url: "/dashboard",
+        title: "Overview",
+        url: "/admin",
         icon: "LayoutDashboard",
         isActive: true,
+        items: [{ title: "Dashboard", url: "/admin" }],
+      },
+      {
+        title: "Management",
+        url: "/admin/users",
+        icon: "Users",
+        isActive: false,
         items: [
-          { title: "Overview", url: "/dashboard" },
-          { title: "Analytics", url: "/admin/analytics" },
-          { title: "Activity", url: "/admin/activity" },
+          { title: "Users", url: "/admin/users" },
+          { title: "Bookings", url: "/admin/bookings" },
+          { title: "Categories", url: "/admin/categories" },
         ],
       },
       {
-        title: "My learning",
-        url: "/admin/learning",
-        icon: "BookOpen",
-        items: [
-          { title: "Courses", url: "/admin/courses" },
-          { title: "Bookmarks", url: "/admin/bookmarks" },
-        ],
-      },
-      {
-        title: "Settings",
-        url: "/admin/settings",
-        icon: "Settings",
-        items: [
-          { title: "Profile", url: "/admin/settings/profile" },
-          { title: "Notifications", url: "/admin/settings/notifications" },
-        ],
-      },
-      {
-        title: "Catalog",
-        url: "/dashboard/categories",
+        title: "Subjects",
+        url: "/dashboard/subjects",
         icon: "FolderTree",
-        items: [
-          { title: "Categories", url: "/dashboard/categories" },
-          { title: "Subjects", url: "/dashboard/subjects" },
-        ],
-      },
-    ],
-    projects: [
-      {
-        name: "In progress",
-        url: "/admin/learning?filter=in-progress",
-        icon: "Frame",
+        isActive: false,
+        items: [{ title: "All subjects", url: "/dashboard/subjects" }],
       },
       {
-        name: "Completed",
-        url: "/admin/learning?filter=completed",
-        icon: "PieChart",
+        title: "Account",
+        url: "/dashboard/profile",
+        icon: "Settings",
+        isActive: false,
+        items: [{ title: "Profile", url: "/dashboard/profile" }],
       },
     ],
+    projects: [],
     user: {
       name: user?.name ?? "Admin",
       email: user?.email ?? "",

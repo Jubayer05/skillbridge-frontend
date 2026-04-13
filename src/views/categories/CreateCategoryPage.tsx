@@ -6,11 +6,14 @@ import type {
   CreateCategoryPayload,
   UpdateCategoryPayload,
 } from "@/types/category";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function CreateCategoryPage() {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const categoriesList =
+    pathname.startsWith("/admin/") ? "/admin/categories" : "/dashboard/categories";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +35,7 @@ export default function CreateCategoryPage() {
           ? { description: payload.description }
           : {}),
       });
-      router.push("/dashboard/categories");
+      router.push(categoriesList);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

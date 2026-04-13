@@ -8,7 +8,7 @@ import type {
   CreateCategoryPayload,
   UpdateCategoryPayload,
 } from "@/types/category";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 function paramId(value: string | string[] | undefined): string {
@@ -20,6 +20,10 @@ function paramId(value: string | string[] | undefined): string {
 export default function EditCategoryPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const categoriesBase = pathname.startsWith("/admin/")
+    ? "/admin/categories"
+    : "/dashboard/categories";
   const categoryId = paramId(params?.categoryId);
   const { category, loading, error } = useCategoryById(categoryId);
   const [saving, setSaving] = useState(false);
@@ -33,7 +37,7 @@ export default function EditCategoryPage() {
     setSaveError(null);
     try {
       await updateCategory(categoryId, payload);
-      router.push(`/dashboard/categories/${categoryId}`);
+      router.push(`${categoriesBase}/${categoryId}`);
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
