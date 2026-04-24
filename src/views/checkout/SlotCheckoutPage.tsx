@@ -7,14 +7,19 @@ import { toast } from "sonner";
 
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { formatSlotTitle } from "@/lib/slot-display";
-import { createBooking } from "@/services/bookingService";
-import { initSslcommerzPayment } from "@/services/paymentService";
 import { getPublicAvailabilitySlotById } from "@/services/availability";
+import { initSslcommerzPayment } from "@/services/paymentService";
 import type { PublicAvailabilitySlot } from "@/types/availability";
 
 function paramId(value: string | string[] | undefined): string {
@@ -89,7 +94,9 @@ function SlotCheckoutForSlot({ slotId }: { slotId: string }) {
         <CardHeader>
           <CardTitle>Checkout</CardTitle>
           <CardDescription>
-            Confirm your booking. You can pay with <span className="font-medium">SSLCommerz (Sandbox)</span> or choose cash on delivery.
+            Confirm your booking. You can pay with{" "}
+            <span className="font-medium">SSLCommerz (Sandbox)</span> or choose
+            cash on delivery.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -134,7 +141,7 @@ function SlotCheckoutForSlot({ slotId }: { slotId: string }) {
             />
           </div>
 
-          <Button
+          {/* <Button
             type="button"
             disabled={submitting || loadingSlot || !slot || !canBook}
             className="w-full"
@@ -156,7 +163,7 @@ function SlotCheckoutForSlot({ slotId }: { slotId: string }) {
             }}
           >
             Confirm booking
-          </Button>
+          </Button> */}
 
           <Button
             type="button"
