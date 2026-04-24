@@ -137,6 +137,9 @@ export const API_ENDPOINTS = {
     complete: (id: string) =>
       `${BASE_URL}/bookings/${encodeURIComponent(id)}/complete`,
   },
+  payments: {
+    sslcommerzInit: `${BASE_URL}/payments/sslcommerz/init`,
+  },
   category: {
     list: `${BASE_URL}/categories`,
     create: `${BASE_URL}/categories`,

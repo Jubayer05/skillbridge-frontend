@@ -12,7 +12,7 @@ export type Booking = {
   duration: number;
   totalPrice: string;
   status: BookingStatus;
-  paymentMethod: "COD";
+  paymentMethod: "COD" | "SSLCOMMERZ";
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -35,7 +35,7 @@ export type Booking = {
 
 export type CreateBookingPayload = {
   availabilitySlotId: string;
-  paymentMethod?: "COD";
+  paymentMethod?: "COD" | "SSLCOMMERZ";
   notes?: string;
 };
 

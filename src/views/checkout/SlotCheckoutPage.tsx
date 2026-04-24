@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { formatSlotTitle } from "@/lib/slot-display";
 import { createBooking } from "@/services/bookingService";
+import { initSslcommerzPayment } from "@/services/paymentService";
 import { getPublicAvailabilitySlotById } from "@/services/availability";
 import type { PublicAvailabilitySlot } from "@/types/availability";
 
@@ -88,7 +89,7 @@ function SlotCheckoutForSlot({ slotId }: { slotId: string }) {
         <CardHeader>
           <CardTitle>Checkout</CardTitle>
           <CardDescription>
-            Confirm your booking. Payment method is <span className="font-medium">Cash on delivery</span> only for now.
+            Confirm your booking. You can pay with <span className="font-medium">SSLCommerz (Sandbox)</span> or choose cash on delivery.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -155,6 +156,29 @@ function SlotCheckoutForSlot({ slotId }: { slotId: string }) {
             }}
           >
             Confirm booking
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={submitting || loadingSlot || !slot || !canBook}
+            className="w-full"
+            onClick={() => {
+              setSubmitting(true);
+              initSslcommerzPayment({
+                availabilitySlotId: slotId,
+                ...(notes.trim() ? { notes: notes.trim() } : {}),
+              })
+                .then(({ gatewayUrl }) => {
+                  window.location.href = gatewayUrl;
+                })
+                .catch((err: Error) => {
+                  toast.error(err.message ?? "Could not start payment");
+                  setSubmitting(false);
+                });
+            }}
+          >
+            Pay with SSLCommerz (Sandbox)
           </Button>
         </CardContent>
       </Card>
